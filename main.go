@@ -25,7 +25,7 @@ func main() {
 	router.Run(":8080")
 }
 
-// /queryhotels?location=SAF&budget=500&start=2022-03-26&end=2022-03-27
+// /queryhotels?location=SAF&budget=500&start=2022-03-26&end=2022-03-27&latitude=51.509865&longitude=-0.118092
 func queryHotels(c *gin.Context) {
 	if Local {
 		hotels := []Hotel{Hotel{"St. Pancras Renaissance Hotel", "London Euston Road", "United Kingdom", 500, 5},
@@ -41,8 +41,10 @@ func queryHotels(c *gin.Context) {
 		budget := c.Query("budget") // shortcut for c.Request.URL.Query().Get("budget")
 		start := c.Query("start")
 		end := c.Query("end")
+		longitude := c.Query("longitude")
+		latitude := c.Query("latitude")
 
-		url := fmt.Sprintf("https://hotels-com-provider.p.rapidapi.com/v1/hotels/nearby?latitude=51.509865&currency=USD&longitude=-0.118092&checkout_date=%v&sort_order=STAR_RATING_HIGHEST_FIRST&checkin_date=%v&adults_number=1&locale=en_US&page_number=1&price_min=10&price_max=%v", end, start, budget)
+		url := fmt.Sprintf("https://hotels-com-provider.p.rapidapi.com/v1/hotels/nearby?latitude=%v&currency=USD&longitude=%v&checkout_date=%v&sort_order=STAR_RATING_HIGHEST_FIRST&checkin_date=%v&adults_number=1&locale=en_US&page_number=1&price_min=10&price_max=%v", latitude, longitude, end, start, budget)
 		req, _ := http.NewRequest("GET", url, nil)
 		req.Header.Add("X-RapidAPI-Host", "hotels-com-provider.p.rapidapi.com")
 		req.Header.Add("X-RapidAPI-Key", "8c1dea45d1mshf68481c4f40bdc2p19580bjsnfeafc8fd25ba")
