@@ -9,20 +9,32 @@ import (
 	"github.com/tidwall/gjson"
 	"strconv"
 	"sort"
+	"os"
+	"log"
 )
 
-var Local bool = true
+var Local bool = false
 
 type Hotel struct {
 	Name, Locality, Country string
-	StayPrice int
+	Price int
 	StarRating int64
 }
 
 func main() {
 	router := gin.Default()
-	router.GET("/queryhotels", queryHotels)
-	router.Run(":8080")
+	router.GET("/api/query-hotels", queryHotels)
+	port := getPort()
+	log.Printf("About to listen on %s. Go to https://127.0.0.1%s/", port, port)
+	router.Run(port)
+}
+
+func getPort() string {
+    port := ":8080"
+    if val, ok := os.LookupEnv("FUNCTIONS_CUSTOMHANDLER_PORT"); ok {
+        port = ":" + val
+    }
+    return port
 }
 
 // /queryhotels?location=SAF&budget=500&start=2022-03-26&end=2022-03-27&latitude=51.509865&longitude=-0.118092
@@ -30,11 +42,13 @@ func queryHotels(c *gin.Context) {
 	if Local {
 		hotels := []Hotel{Hotel{"St. Pancras Renaissance Hotel", "London Euston Road", "United Kingdom", 500, 5},
 		Hotel{"St Martins Lane", "London 45 St Martin's Lane", "United Kingdom", 485, 5},
-		Hotel{Name:"ME London",Locality:"336-337 The Strand",Country:"United Kingdom",StayPrice:440,StarRating:5},
+		Hotel{Name:"ME London",Locality:"336-337 The Strand",Country:"United Kingdom",Price:440,StarRating:5},
+		{Name:"South Place Hotel",Locality:"3 South Place",Country:"United Kingdom",Price:357,StarRating:5},
+		{Name:"Andaz London Liverpool Street - a concept by Hyatt",Locality:"40 Liverpool Street",Country:"United Kingdom",Price:350,StarRating:5},
 		}
 
 		sortedHotels := sortResults(hotels)
-		
+
 		c.PureJSON(http.StatusOK, sortedHotels[:min(len(hotels), 10)])
 	} else {
 		// location := c.DefaultQuery("location", "N/A")
@@ -72,7 +86,7 @@ func parseQueryResult(result []gjson.Result) []Hotel{
 		h.Locality = address.Get("streetAddress").String()
 		h.Country = address.Get("countryName").String()
 		price := v.Get("ratePlan.price.current").String()
-		h.StayPrice, _ = strconv.Atoi(price[1:])
+		h.Price, _ = strconv.Atoi(price[1:])
 		hotels = append(hotels, h)
 	}
 	return hotels
@@ -80,7 +94,7 @@ func parseQueryResult(result []gjson.Result) []Hotel{
 
 func sortResults(hotels []Hotel) []Hotel{
 	sort.SliceStable(hotels, func(i, j int) bool {
-		return hotels[i].StayPrice < hotels[j].StayPrice
+		return hotels[i].Price < hotels[j].Price
 	})
 	return hotels
 }
