@@ -13,7 +13,8 @@ import (
 	"log"
 )
 
-var Local bool = false
+const LOCAL bool = true
+const DUMMYDATA bool = false
 
 type Hotel struct {
 	Name, Locality, Country string
@@ -30,6 +31,9 @@ func main() {
 }
 
 func getPort() string {
+	if LOCAL {
+		return ":8081"
+	}
     port := ":8080"
     if val, ok := os.LookupEnv("FUNCTIONS_CUSTOMHANDLER_PORT"); ok {
         port = ":" + val
@@ -37,9 +41,9 @@ func getPort() string {
     return port
 }
 
-// /queryhotels?location=SAF&budget=500&start=2022-03-26&end=2022-03-27&latitude=51.509865&longitude=-0.118092
+// /queryhotels?location=SAF&budget=500&start=2022-03-26&end=2022-03-27&latitude=51.509865&longitude=-0.118092&people=3
 func queryHotels(c *gin.Context) {
-	if Local {
+	if DUMMYDATA {
 		hotels := []Hotel{Hotel{"St. Pancras Renaissance Hotel", "London Euston Road", "United Kingdom", 500, 5},
 		Hotel{"St Martins Lane", "London 45 St Martin's Lane", "United Kingdom", 485, 5},
 		Hotel{Name:"ME London",Locality:"336-337 The Strand",Country:"United Kingdom",Price:440,StarRating:5},
@@ -57,8 +61,9 @@ func queryHotels(c *gin.Context) {
 		end := c.Query("end")
 		longitude := c.Query("longitude")
 		latitude := c.Query("latitude")
+		people := c.Query("people")
 
-		url := fmt.Sprintf("https://hotels-com-provider.p.rapidapi.com/v1/hotels/nearby?latitude=%v&currency=USD&longitude=%v&checkout_date=%v&sort_order=STAR_RATING_HIGHEST_FIRST&checkin_date=%v&adults_number=1&locale=en_US&page_number=1&price_min=10&price_max=%v", latitude, longitude, end, start, budget)
+		url := fmt.Sprintf("https://hotels-com-provider.p.rapidapi.com/v1/hotels/nearby?latitude=%v&currency=USD&longitude=%v&checkout_date=%v&sort_order=STAR_RATING_HIGHEST_FIRST&checkin_date=%v&adults_number=%v&locale=en_US&page_number=1&price_min=10&price_max=%v", latitude, longitude, end, start, people, budget)
 		req, _ := http.NewRequest("GET", url, nil)
 		req.Header.Add("X-RapidAPI-Host", "hotels-com-provider.p.rapidapi.com")
 		req.Header.Add("X-RapidAPI-Key", "8c1dea45d1mshf68481c4f40bdc2p19580bjsnfeafc8fd25ba")
