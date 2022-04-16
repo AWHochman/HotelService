@@ -77,9 +77,9 @@ func queryHotels(c *gin.Context) {
 
 		sortedHotels := sortResults(hotels)
 		
-		// returns the 10 cheapest hotels
-		// c.PureJSON(http.StatusOK, sortedHotels[:min(len(hotels), 10)])
-		c.PureJSON(http.StatusOK, sortedHotels[0])
+		// returns the 3 cheapest hotels
+		c.PureJSON(http.StatusOK, sortedHotels[:min(len(hotels), 3)])
+		// c.PureJSON(http.StatusOK, sortedHotels[0])
 	}
 }
 
