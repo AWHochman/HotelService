@@ -81,7 +81,7 @@ func queryHotels(c *gin.Context) {
 		// calculateDistances(hotels, longitude, latitude)
 
 		sortedHotels := sortResults(hotels)
-		log.Printf(fmt.Sprintf("%v", hotels))
+		// log.Printf(fmt.Sprintf("%v", hotels))
 		
 		// returns the 3 cheapest hotels
 		c.PureJSON(http.StatusOK, sortedHotels[:min(len(hotels), 3)])
@@ -111,7 +111,7 @@ func calcDistance(lat1, long1, lat2, long2 float64) float64 {
 	deltLamb := (long2 - long1) * math.Pi/180
 	a := math.Sin(deltPhi/2) * math.Sin(deltPhi/2) + math.Cos(phi1) * math.Cos(phi2) * math.Sin(deltLamb/2) * math.Sin(deltLamb/2)
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
-	return R * c
+	return (R * c)/1609 //meters to miles 
 }
 
 func parseQueryResult(result []gjson.Result, airportLong, airportLat string) []Hotel{
