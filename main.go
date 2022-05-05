@@ -11,6 +11,7 @@ import (
 	"sort"
 	"os"
 	"log"
+	"math"
 )
 
 const LOCAL bool = true
@@ -20,6 +21,8 @@ type Hotel struct {
 	Name, Locality, Country string
 	Price int
 	StarRating int64
+	Long, Lat float64
+	DistanceFromAirport float64
 }
 
 func main() {
@@ -44,8 +47,8 @@ func getPort() string {
 // /queryhotels?location=SAF&budget=500&start=2022-03-26&end=2022-03-27&latitude=51.509865&longitude=-0.118092&people=3
 func queryHotels(c *gin.Context) {
 	if DUMMYDATA {
-		hotels := []Hotel{Hotel{"St. Pancras Renaissance Hotel", "London Euston Road", "United Kingdom", 500, 5},
-		Hotel{"St Martins Lane", "London 45 St Martin's Lane", "United Kingdom", 485, 5},
+		hotels := []Hotel{Hotel{"St. Pancras Renaissance Hotel", "London Euston Road", "United Kingdom", 500, 5, 0.0, 0.0, 0.0},
+		Hotel{"St Martins Lane", "London 45 St Martin's Lane", "United Kingdom", 485, 5,  0.0, 0.0, 0.0},
 		Hotel{Name:"ME London",Locality:"336-337 The Strand",Country:"United Kingdom",Price:440,StarRating:5},
 		{Name:"South Place Hotel",Locality:"3 South Place",Country:"United Kingdom",Price:357,StarRating:5},
 		{Name:"Andaz London Liverpool Street - a concept by Hyatt",Locality:"40 Liverpool Street",Country:"United Kingdom",Price:350,StarRating:5},
@@ -73,9 +76,12 @@ func queryHotels(c *gin.Context) {
 		defer res.Body.Close()
 		body, _ := ioutil.ReadAll(res.Body)
 		hotelRes := gjson.Get(string(body), "searchResults.results").Array()
-		hotels := parseQueryResult(hotelRes)
+		hotels := parseQueryResult(hotelRes, longitude, latitude)
+
+		// calculateDistances(hotels, longitude, latitude)
 
 		sortedHotels := sortResults(hotels)
+		log.Printf(fmt.Sprintf("%v", hotels))
 		
 		// returns the 3 cheapest hotels
 		c.PureJSON(http.StatusOK, sortedHotels[:min(len(hotels), 3)])
@@ -83,9 +89,43 @@ func queryHotels(c *gin.Context) {
 	}
 }
 
-func parseQueryResult(result []gjson.Result) []Hotel{
+// func calculateDistances(hotels []Hotel, airportLong, airportLat string) {
+// 	for _, h := range hotels {
+// 		lat1, err := strconv.ParseFloat(airportLat, 64)
+// 		if err != nil {
+// 			panic(err)
+// 		}
+// 		long1, err := strconv.ParseFloat(airportLong, 64)
+// 		if err != nil {
+// 			panic(err)
+// 		}
+// 		h.distanceFromAirport = calcDistance(lat1, long1, h.Lat, h.Long)
+// 	}
+// }
+
+func calcDistance(lat1, long1, lat2, long2 float64) float64 {
+	R := 6371000.0
+	phi1 := lat1 * math.Pi/180
+	phi2 := lat2 * math.Pi/180
+	deltPhi := (lat2 - lat1) * math.Pi/180
+	deltLamb := (long2 - long1) * math.Pi/180
+	a := math.Sin(deltPhi/2) * math.Sin(deltPhi/2) + math.Cos(phi1) * math.Cos(phi2) * math.Sin(deltLamb/2) * math.Sin(deltLamb/2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	return R * c
+}
+
+func parseQueryResult(result []gjson.Result, airportLong, airportLat string) []Hotel{
 	hotels := make([]Hotel, 0)
+	lat1, err := strconv.ParseFloat(airportLat, 64)
+	if err != nil {
+		panic(err)
+	}
+	long1, err := strconv.ParseFloat(airportLong, 64)
+	if err != nil {
+		panic(err)
+	}
 	for _, v := range result {
+		// log.Printf(v.String())
 		h := Hotel{}
 		h.Name = v.Get("name").String()
 		h.StarRating = v.Get("starRating").Int()
@@ -94,7 +134,11 @@ func parseQueryResult(result []gjson.Result) []Hotel{
 		h.Country = address.Get("countryName").String()
 		price := v.Get("ratePlan.price.current").String()
 		h.Price, _ = strconv.Atoi(price[1:])
+		h.Long = v.Get("coordinate.lon").Float()
+		h.Lat = v.Get("coordinate.lat").Float()
+		h.DistanceFromAirport = calcDistance(lat1, long1, h.Lat, h.Long)
 		hotels = append(hotels, h)
+		// log.Printf(fmt.Sprintf("%v", h))
 	}
 	return hotels
 }
