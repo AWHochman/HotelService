@@ -14,7 +14,7 @@ import (
 	"math"
 )
 
-const LOCAL bool = true
+const LOCAL bool = false
 const DUMMYDATA bool = false
 
 type Hotel struct {
@@ -84,7 +84,7 @@ func queryHotels(c *gin.Context) {
 		// log.Printf(fmt.Sprintf("%v", hotels))
 		
 		// returns the 3 cheapest hotels
-		c.PureJSON(http.StatusOK, sortedHotels[:min(len(hotels), 3)])
+		c.PureJSON(http.StatusOK, sortedHotels[0])
 		// c.PureJSON(http.StatusOK, sortedHotels[0])
 	}
 }
