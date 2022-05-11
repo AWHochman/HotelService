@@ -71,10 +71,19 @@ func queryHotels(c *gin.Context) {
 		req.Header.Add("X-RapidAPI-Host", "hotels-com-provider.p.rapidapi.com")
 		req.Header.Add("X-RapidAPI-Key", "8c1dea45d1mshf68481c4f40bdc2p19580bjsnfeafc8fd25ba")
 
-		res, _ := http.DefaultClient.Do(req)
+		res, err := http.DefaultClient.Do(req)
+
+		if err != nil {
+			log.Fatalln(err)
+		}
 
 		defer res.Body.Close()
-		body, _ := ioutil.ReadAll(res.Body)
+		body, err := ioutil.ReadAll(res.Body)
+
+		if err != nil {
+			log.Fatalln(err)
+		}
+
 		hotelRes := gjson.Get(string(body), "searchResults.results").Array()
 		hotels := parseQueryResult(hotelRes, longitude, latitude)
 
